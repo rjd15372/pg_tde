@@ -60,8 +60,8 @@ write_decrypted_segment(const char *segpath, const char *segname, const char *tm
 		int			walsegsz = longhdr->xlp_seg_size;
 
 		if (walsegsz != fsize)
-			pg_fatal("mismatch of segment size in WAL file \"%s\" (header: %d bytes, file size: %lld bytes)",
-					 segname, walsegsz, (long long int) fsize);
+			pg_fatal("mismatch of segment size in WAL file \"%s\" [%s] (header: %d bytes, file size: %lld bytes)",
+					 segname, segpath, walsegsz, (long long int) fsize);
 
 		if (!IsValidWalSegSize(walsegsz))
 		{
@@ -226,9 +226,16 @@ main(int argc, char *argv[])
 
 		{
 			char		tdedir[MAXPGPATH];
+			char		abssourcepath[MAXPGPATH];
+			char	   *resolved_sourcepath;
 
 			derive_tde_dir_from_segment_path(sourcepath, sep, tdedir, sizeof(tdedir));
+			resolved_sourcepath = realpath(sourcepath, abssourcepath);
 
+			pg_log_info("pg_tde dir: %s, sourcepath: %s, sourcepath(abs): %s",
+						tdedir,
+						sourcepath,
+						resolved_sourcepath != NULL ? resolved_sourcepath : sourcepath);
 			pg_tde_fe_init(tdedir);
 			TDEXLogSmgrInit();
 		}
